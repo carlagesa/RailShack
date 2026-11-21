@@ -4,3 +4,4 @@ node_modules/
 
 # Interactive architecture page is kept private (only the static PNGs are published)
 docs/architecture/*.html
+docs/local-development-and-rebuild-plan.md
