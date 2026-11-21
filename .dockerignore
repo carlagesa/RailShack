@@ -1,0 +1,10 @@
+.git
+.run
+**/node_modules
+**/__pycache__
+**/*.py[cod]
+**/.venv
+**/venv
+**/*.class
+.env
+.env.*

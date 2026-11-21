@@ -99,6 +99,7 @@ the application.
 |---|---|
 | `services/` | The 50 application services and their runtime source |
 | `libs/` | Shared Go, Node.js, Python, and Java support libraries |
+| `docker/` / `.dockerignore` | Reusable per-runtime Dockerfiles and lean build context |
 | `services.json` | Service names, languages, domains, and local ports |
 | `scripts/start-services.sh` | Build and start the application from source |
 | `scripts/smoke-test.sh` / `scripts/smoke-test.ps1` | End-to-end application smoke tests |

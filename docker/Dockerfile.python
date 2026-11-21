@@ -1,0 +1,13 @@
+FROM python:3.13-slim
+
+ARG SERVICE
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app/libs/pykit PORT=8080
+WORKDIR /app
+COPY libs/pykit/railkit.py ./libs/pykit/railkit.py
+COPY services/${SERVICE} ./services/${SERVICE}
+RUN useradd --system --uid 10001 --no-create-home app
+USER 10001:10001
+WORKDIR /app/services/${SERVICE}
+EXPOSE 8080
+CMD ["python", "app.py"]

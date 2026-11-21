@@ -169,15 +169,60 @@ services are visible in `/api/platform/status`.
 
 ### Stage 2 — restore container packaging
 
-1. Reintroduce one minimal Docker build recipe per runtime (Go, Node.js,
-   Python, Java), using the existing source and shared libraries. The removed
-   `scripts/generate.py` and service Dockerfiles are intentionally not part of
-   this baseline; add them back only as a distinct packaging lesson.
-2. Build images locally from the repository root and run a single service
-   container first. Check non-root execution, environment configuration,
-   `/healthz`, `/readyz`, and `/metrics`.
-3. Build all 50 images, tagging them with local names such as
-   `railshack-auth:dev`. Do not push to GHCR or any public registry.
+The reusable runtime recipes in `docker/` build each service from the
+repository root. That build context is required because the services import
+their shared language kits from `libs/`. `.dockerignore` omits local state,
+generated files, dependencies, and environment files while retaining the
+service catalog and shared kits.
+
+1. Build and run one service first. For example, from the repository root:
+
+   ```bash
+   docker build -f docker/Dockerfile.node \
+     --build-arg SERVICE=user-profile \
+     -t railshack/user-profile:dev .
+   docker run -d --rm --name user-profile \
+     -p 9002:8080 railshack/user-profile:dev
+   for attempt in $(seq 1 30); do
+     curl -fsS http://localhost:9002/healthz >/dev/null && break
+     sleep 1
+   done
+   curl -fsS http://localhost:9002/healthz
+   curl -fsS http://localhost:9002/readyz
+   curl -fsS http://localhost:9002/metrics
+   curl -fsS http://localhost:9002/api/user-profile/demo
+   docker logs user-profile
+   docker stop user-profile
+   ```
+
+   Each container listens on port 8080; the host port is the service's port
+   from `services.json`. The Go, Java, and Python images run as non-root users;
+   the Node base image's `node` user is used as well.
+2. Build all 50 images locally. This Bash loop reads the service names and
+   runtimes from `services.json` and selects the matching shared Dockerfile:
+
+   ```bash
+   while read -r name lang; do
+     case "$lang" in
+       go)     dockerfile=docker/Dockerfile.go ;;
+       node)   dockerfile=docker/Dockerfile.node ;;
+       python) dockerfile=docker/Dockerfile.python ;;
+       java)   dockerfile=docker/Dockerfile.java ;;
+       *) echo "Unsupported runtime: $lang" >&2; exit 1 ;;
+     esac
+     docker build -f "$dockerfile" --build-arg "SERVICE=$name" \
+       -t "railshack/$name:dev" .
+   done < <(python3 -c \
+     'import json; [print(s["name"], s["lang"]) for s in json.load(open("services.json"))]')
+   ```
+
+   Do not push images to GHCR or any public registry. Do not set `PORTS_FILE`
+   inside containers: without it, the shared kits use service DNS names
+   (`http://<service>:8080`) rather than the source-runner's localhost ports.
+   When running all services together, place them on one Docker network and
+   name each container/service after its catalog entry. Publish the frontend's
+   port to the host; service-to-service calls should stay on that network.
+   Configure frontend's `SERVICES_FILE=/app/services.json` if needed.
 
 **Checkpoint:** the frontend container can reach the API gateway and all
 service containers can reach their dependencies by a local network name.
