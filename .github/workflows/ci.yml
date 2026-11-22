@@ -1,7 +1,7 @@
 # RailShack · 50 Microservices Project by DevOps Shack
 # Copyright (c) 2026 DevOps Shack (Aditya Jaiswal) · https://devopsshack.com · https://www.youtube.com/@devopsshack
 # SPDX-License-Identifier: Apache-2.0
-# CI validates and smoke-tests the application. It does not build or publish images.
+# CI validates, smoke-tests and builds images without publishing them.
 name: CI
 
 on:
@@ -67,3 +67,31 @@ jobs:
         with:
           name: service-logs
           path: .run/logs
+
+  build-images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build all service images
+        run: |
+          python3 - <<'PY'
+          import json
+          import subprocess
+          from pathlib import Path
+
+          services = json.loads(Path("services.json").read_text())
+          for service in services:
+              name = service["name"]
+              lang = service["lang"]
+              subprocess.run(
+                  [
+                      "docker", "build",
+                      "--file", f"docker/Dockerfile.{lang}",
+                      "--build-arg", f"SERVICE={name}",
+                      "--tag", f"railshack/{name}:ci",
+                      ".",
+                  ],
+                  check=True,
+              )
+          PY

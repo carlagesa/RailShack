@@ -90,8 +90,8 @@ in-memory paths where supported.
 
 The smoke test exercises sign-up/sign-in, train search, booking, PNR lookup,
 trip history, and cancellation. The test-only GitHub Actions workflow runs the
-same checks against PostgreSQL and Redis; it does not publish images or deploy
-the application.
+same checks against PostgreSQL and Redis, and builds all 50 service images.
+Images are validated only: CI does not publish them or deploy the application.
 
 ## Repository map
 
