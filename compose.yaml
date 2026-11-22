@@ -1,0 +1,420 @@
+name: railshack
+
+x-app-service: &app-service
+  init: true
+  restart: unless-stopped
+  environment: &app-environment
+    PORT: "8080"
+    APP_ENV: local
+    CLUSTER_NAME: local-docker
+    DATABASE_URL: postgres://railshack:railshack-local@postgres:5432/railshack?sslmode=disable
+    REDIS_ADDR: redis:6379
+    SERVICES_FILE: /app/services.json
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+  networks:
+    - app
+
+x-build-go: &build-go
+  context: .
+  dockerfile: docker/Dockerfile.go
+
+x-build-node: &build-node
+  context: .
+  dockerfile: docker/Dockerfile.node
+
+x-build-python: &build-python
+  context: .
+  dockerfile: docker/Dockerfile.python
+
+x-build-java: &build-java
+  context: .
+  dockerfile: docker/Dockerfile.java
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: railshack
+      POSTGRES_USER: railshack
+      POSTGRES_PASSWORD: railshack-local
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U railshack -d railshack"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - app
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - app
+
+  auth:
+    <<: *app-service
+    build:
+      <<: *build-go
+      args:
+        SERVICE: auth
+
+  user-profile:
+    <<: *app-service
+    build:
+      <<: *build-node
+      args:
+        SERVICE: user-profile
+
+  passengers:
+    <<: *app-service
+    build:
+      <<: *build-node
+      args:
+        SERVICE: passengers
+
+  kyc:
+    <<: *app-service
+    build:
+      <<: *build-python
+      args:
+        SERVICE: kyc
+
+  notifications:
+    <<: *app-service
+    build:
+      <<: *build-go
+      args:
+        SERVICE: notifications
+
+  preferences:
+    <<: *app-service
+    build:
+      <<: *build-node
+      args:
+        SERVICE: preferences
+
+  stations:
+    <<: *app-service
+    build:
+      <<: *build-go
+      args:
+        SERVICE: stations
+
+  trains:
+    <<: *app-service
+    build:
+      <<: *build-go
+      args:
+        SERVICE: trains
+
+  routes:
+    <<: *app-service
+    build:
+      <<: *build-go
+      args:
+        SERVICE: routes
+
+  schedules:
+    <<: *app-service
+    build:
+      <<: *build-java
+      args:
+        SERVICE: schedules
+
+  search:
+    <<: *app-service
+    build:
+      <<: *build-go
+      args:
+        SERVICE: search
+
+  seat-map:
+    <<: *app-service
+    build:
+      <<: *build-go
+      args:
+        SERVICE: seat-map
+
+  fares:
+    <<: *app-service
+    build:
+      <<: *build-java
+      args:
+        SERVICE: fares
+
+  quota:
+    <<: *app-service
+    build:
+      <<: *build-go
+      args:
+        SERVICE: quota
+
+  booking:
+    <<: *app-service
+    build:
+      <<: *build-go
+      args:
+        SERVICE: booking
+
+  pnr:
+    <<: *app-service
+    build:
+      <<: *build-go
+      args:
+        SERVICE: pnr
+
+  seat-allocation:
+    <<: *app-service
+    build:
+      <<: *build-go
+      args:
+        SERVICE: seat-allocation
+
+  waitlist:
+    <<: *app-service
+    build:
+      <<: *build-node
+      args:
+        SERVICE: waitlist
+
+  rac:
+    <<: *app-service
+    build:
+      <<: *build-node
+      args:
+        SERVICE: rac
+
+  tatkal:
+    <<: *app-service
+    build:
+      <<: *build-python
+      args:
+        SERVICE: tatkal
+
+  cancellation:
+    <<: *app-service
+    build:
+      <<: *build-node
+      args:
+        SERVICE: cancellation
+
+  refunds:
+    <<: *app-service
+    build:
+      <<: *build-go
+      args:
+        SERVICE: refunds
+
+  booking-history:
+    <<: *app-service
+    build:
+      <<: *build-node
+      args:
+        SERVICE: booking-history
+
+  ticket-pdf:
+    <<: *app-service
+    build:
+      <<: *build-python
+      args:
+        SERVICE: ticket-pdf
+
+  payment-gateway:
+    <<: *app-service
+    build:
+      <<: *build-go
+      args:
+        SERVICE: payment-gateway
+
+  wallet:
+    <<: *app-service
+    build:
+      <<: *build-go
+      args:
+        SERVICE: wallet
+
+  upi:
+    <<: *app-service
+    build:
+      <<: *build-node
+      args:
+        SERVICE: upi
+
+  invoices:
+    <<: *app-service
+    build:
+      <<: *build-java
+      args:
+        SERVICE: invoices
+
+  offers:
+    <<: *app-service
+    build:
+      <<: *build-node
+      args:
+        SERVICE: offers
+
+  settlements:
+    <<: *app-service
+    build:
+      <<: *build-python
+      args:
+        SERVICE: settlements
+
+  live-status:
+    <<: *app-service
+    build:
+      <<: *build-go
+      args:
+        SERVICE: live-status
+
+  platform-info:
+    <<: *app-service
+    build:
+      <<: *build-node
+      args:
+        SERVICE: platform-info
+
+  food-ordering:
+    <<: *app-service
+    build:
+      <<: *build-node
+      args:
+        SERVICE: food-ordering
+
+  retiring-rooms:
+    <<: *app-service
+    build:
+      <<: *build-python
+      args:
+        SERVICE: retiring-rooms
+
+  tourism:
+    <<: *app-service
+    build:
+      <<: *build-node
+      args:
+        SERVICE: tourism
+
+  cab-booking:
+    <<: *app-service
+    build:
+      <<: *build-go
+      args:
+        SERVICE: cab-booking
+
+  insurance:
+    <<: *app-service
+    build:
+      <<: *build-java
+      args:
+        SERVICE: insurance
+
+  chart-preparation:
+    <<: *app-service
+    build:
+      <<: *build-python
+      args:
+        SERVICE: chart-preparation
+
+  api-gateway:
+    <<: *app-service
+    build:
+      <<: *build-go
+      args:
+        SERVICE: api-gateway
+
+  config:
+    <<: *app-service
+    build:
+      <<: *build-go
+      args:
+        SERVICE: config
+
+  rate-limiter:
+    <<: *app-service
+    build:
+      <<: *build-go
+      args:
+        SERVICE: rate-limiter
+
+  audit-log:
+    <<: *app-service
+    build:
+      <<: *build-go
+      args:
+        SERVICE: audit-log
+
+  analytics:
+    <<: *app-service
+    build:
+      <<: *build-node
+      args:
+        SERVICE: analytics
+
+  search-indexer:
+    <<: *app-service
+    build:
+      <<: *build-go
+      args:
+        SERVICE: search-indexer
+
+  email:
+    <<: *app-service
+    build:
+      <<: *build-node
+      args:
+        SERVICE: email
+
+  sms:
+    <<: *app-service
+    build:
+      <<: *build-node
+      args:
+        SERVICE: sms
+
+  scheduler:
+    <<: *app-service
+    build:
+      <<: *build-go
+      args:
+        SERVICE: scheduler
+
+  feedback:
+    <<: *app-service
+    build:
+      <<: *build-node
+      args:
+        SERVICE: feedback
+
+  admin:
+    <<: *app-service
+    build:
+      <<: *build-node
+      args:
+        SERVICE: admin
+
+  frontend:
+    <<: *app-service
+    build:
+      <<: *build-node
+      args:
+        SERVICE: frontend
+    ports:
+      - "${FRONTEND_PORT:-19050}:8080"
+
+networks:
+  app:
+
+volumes:
+  postgres-data:
