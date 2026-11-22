@@ -30,8 +30,9 @@
 
 RailShack lets users search trains, book tickets, check PNR status, view trips,
 and cancel bookings. This checkout is intentionally focused on the application:
-service source, shared libraries, local execution, and application tests. Cloud
-deployment and Kubernetes packaging have been removed.
+service source, shared libraries, local execution, and application tests.
+Production cloud deployment is out of scope, but a local kind-based Kubernetes
+workflow is provided for development and testing.
 
 ## What is in the application?
 
@@ -63,9 +64,9 @@ when the processes stop.
 ## Run locally
 
 The app runs directly from source; the runner starts all 50 services without
-building application containers. Use Git Bash or WSL on Windows (or another
-Bash shell). Required runtimes are Go 1.24, Node.js 22, Python 3.13, and JDK
-21, plus Python 3 and curl.
+building application containers. Run the commands from WSL or another Bash
+shell. Required runtimes are Go 1.24, Node.js 22, Python 3.13, and JDK 21,
+plus Python 3 and curl.
 
 For persistent database and cache behavior, start local PostgreSQL 16 and Redis
 7 (installed natively or in local-only containers). Create a `railshack`
@@ -100,17 +101,19 @@ Images are validated only: CI does not publish them or deploy the application.
 | `services/` | The 50 application services and their runtime source |
 | `libs/` | Shared Go, Node.js, Python, and Java support libraries |
 | `docker/` / `.dockerignore` | Reusable per-runtime Dockerfiles and lean build context |
+| `compose.yaml` | Local network for all services, PostgreSQL, and Redis |
+| `k8s/dependencies.yaml` | kind namespace, shared configuration, PostgreSQL, and Redis |
 | `services.json` | Service names, languages, domains, and local ports |
 | `scripts/start-services.sh` | Build and start the application from source |
+| `scripts/load-kind-images.sh` / `scripts/render-k8s-services.py` | Load local images and render catalog-based Kubernetes workloads |
 | `scripts/smoke-test.sh` / `scripts/smoke-test.ps1` | End-to-end application smoke tests |
 | `.github/workflows/ci.yml` | Syntax, Go vet, and end-to-end application tests |
 | `docs/architecture/` | Service call-map and service-to-service edges |
 
 For a staged guide to rebuilding the removed deployment locally, see
-[the local development and deployment rebuild plan](docs/local-development-and-rebuild-plan.md).
-It targets AWS Emulator v1.0.322 for local AWS API exercises and kind for the
-actual Kubernetes cluster running application pods; the emulator's EKS API
-does not by itself provide a connected RailShack cluster.
+[the WSL-first local development guide](docs/local-development-and-rebuild-plan.md).
+It starts with one local container and progresses toward a local Kubernetes
+cluster; no AWS account or credentials are required.
 
 ## See it in action
 
